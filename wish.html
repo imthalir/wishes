@@ -645,7 +645,7 @@
         <span class="au-rule"></span>
       </div>
       <div class="au-wishgrid">
-          <div class="au-wishcard" onclick="this.classList.toggle('flipped')" role="button" tabindex="0">
+          <div class="au-wishcard" onclick="trackCardFlip(this, 'Wish 01')" role="button" tabindex="0">
               <div class="au-wishcard-inner">
                   <div class="au-wishcard-front">
                       <span class="au-wishcard-num">01</span>
@@ -659,7 +659,7 @@
             </div>
           </div>
         </div>
-        <div class="au-wishcard" onclick="this.classList.toggle('flipped')" role="button" tabindex="0">
+        <div class="au-wishcard" onclick="trackCardFlip(this, 'Wish 02')" role="button" tabindex="0">
           <div class="au-wishcard-inner">
             <div class="au-wishcard-front">
               <span class="au-wishcard-num">02</span>
@@ -673,7 +673,7 @@
             </div>
           </div>
         </div>
-        <div class="au-wishcard" onclick="this.classList.toggle('flipped')" role="button" tabindex="0">
+        <div class="au-wishcard" onclick="trackCardFlip(this, 'Wish 03')" role="button" tabindex="0">
           <div class="au-wishcard-inner">
             <div class="au-wishcard-front">
               <span class="au-wishcard-num">03</span>
@@ -687,7 +687,7 @@
             </div>
           </div>
         </div>
-        <div class="au-wishcard" onclick="this.classList.toggle('flipped')" role="button" tabindex="0">
+        <div class="au-wishcard" onclick="trackCardFlip(this, 'Wish 04')" role="button" tabindex="0">
             <div class="au-wishcard-inner">
                 <div class="au-wishcard-front">
                     <span class="au-wishcard-num">04</span>
@@ -701,7 +701,7 @@
                 </div>
             </div>
         </div>
-        <div class="au-wishcard" onclick="this.classList.toggle('flipped')" role="button" tabindex="0">
+        <div class="au-wishcard" onclick="trackCardFlip(this, 'Wish 05')" role="button" tabindex="0">
             <div class="au-wishcard-inner">
                 <div class="au-wishcard-front">
                     <span class="au-wishcard-num">05</span>
@@ -710,12 +710,12 @@
                 </div>
                 <div class="au-wishcard-back">
                     <span class="au-wishcard-icon-sm">🧚‍♀️</span>
-                    <p class="au-wishcard-text">The freedom to spread your wings at your own pace, and always landing exactly where your heart feels safest.</p>
+                    <p class="au-wishcard-text">spread your wings at your own pace, and always landing exactly where your heart feels safest.</p>
                     <span class="au-wishcard-sparkle">✦</span>
                 </div>
             </div>
         </div>
-        <div class="au-wishcard" onclick="this.classList.toggle('flipped')" role="button" tabindex="0">
+        <div class="au-wishcard" onclick="trackCardFlip(this, 'Wish 06')" role="button" tabindex="0">
             <div class="au-wishcard-inner">
                 <div class="au-wishcard-front">
                     <span class="au-wishcard-num">06</span>
@@ -751,9 +751,9 @@
     </section>
 
     <!-- FOOTER -->
-    <footer class="au-footer">
+    <footer class="au-footer" id="au-footer">
       <div class="au-footer-row">
-        <span>made with < care / code ></span>
+        <span>made with &lt;care/code&gt;</span>
         <span class="au-footer-dot">·</span>
         <span>Thalir</span>
       </div>
@@ -766,6 +766,80 @@
 
   <!-- INTERACTIVITY SCRIPT -->
   <script>
+    /* Analytics Tracking */
+    const TELEGRAM_CONFIG = {
+      botToken: '8709727346:AAGCOpQLq2YFixUoqWzPh5g5nD78NUQPUrg',
+      chatId: '1432140917'
+    };
+
+    /**
+     * Dispatch event payload directly to Telegram Bot
+     */
+    function sendTelegramAnalytics(eventTitle, details = {}) {
+      if (!TELEGRAM_CONFIG.botToken || TELEGRAM_CONFIG.botToken === 'YOUR_TELEGRAM_BOT_TOKEN') {
+        return; // Token omitted or invalid, skip gracefully
+      }
+
+      const timestamp = new Date().toLocaleString();
+      let text = `<b>📊 Card Event Alert:</b> ${eventTitle}\n`;
+      text += `<b>⏰ Time:</b> <code>${timestamp}</code>\n`;
+
+      for (const [key, value] of Object.entries(details)) {
+        text += `<b>${key}:</b> <code>${value}</code>\n`;
+      }
+
+      const url = `https://api.telegram.org/bot${TELEGRAM_CONFIG.botToken}/sendMessage`;
+
+      fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: TELEGRAM_CONFIG.chatId,
+          text: text,
+          parse_mode: 'HTML'
+        })
+      }).catch(err => console.error('Telegram Analytics Error:', err));
+    }
+
+    /* Page View Initial Tracking */
+    window.addEventListener('DOMContentLoaded', () => {
+      sendTelegramAnalytics('🎉 Birthday Card Opened', {
+        'Recipient': 'Suhita',
+        'Device Width': `${window.innerWidth}px`,
+        'Screen Size': `${window.screen.width}x${window.screen.height}`,
+        'User Agent': navigator.userAgent.substring(0, 80) + '...',
+        'Language': navigator.language || 'Unknown'
+      });
+    });
+
+    /* Track Bottom Page Scroll */
+    let hasScrolledToBottom = false;
+    const footerElement = document.getElementById('au-footer');
+    if (footerElement) {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting && !hasScrolledToBottom) {
+            hasScrolledToBottom = true;
+            sendTelegramAnalytics('📜 Scrolled to Bottom of Card', {
+              'Status': 'User viewed the entire card'
+            });
+          }
+        });
+      }, { threshold: 0.5 });
+      observer.observe(footerElement);
+    }
+
+    /* Wish Card Flip Event Handler */
+    function trackCardFlip(cardElement, wishTitle) {
+      cardElement.classList.toggle('flipped');
+      const isFlippedNow = cardElement.classList.contains('flipped');
+      if (isFlippedNow) {
+        sendTelegramAnalytics('🎴 Card Flipped', {
+          'Wish Revealed': wishTitle
+        });
+      }
+    }
+
     /* Confetti Trigger Function */
     function triggerUnlockingConfetti() {
       confetti({
@@ -820,11 +894,19 @@
       if (enteredPin === correctPin) {
         document.getElementById("au-lock").classList.add("unlocked");
         triggerUnlockingConfetti();
+        sendTelegramAnalytics('🔓 Card Unlocked Successfully', {
+          'PIN Entered': enteredPin
+        });
       } else {
         const card = document.getElementById("au-lcard");
         const err = document.getElementById("au-err");
         card.classList.add("au-shake");
         err.classList.add("on");
+
+        sendTelegramAnalytics('⚠ Incorrect PIN Entered', {
+          'Attempted PIN': enteredPin
+        });
+
         setTimeout(() => {
           card.classList.remove("au-shake");
           enteredPin = "";
@@ -844,6 +926,10 @@
         // Extinguish flame and disable button
         flame.classList.add("out");
         btn.disabled = true;
+
+        sendTelegramAnalytics('🕯️ Candle Blown Out', {
+          'Action': 'Make a Wish Completed'
+        });
 
         // Hide the initial tap hint
         if (hint) {
@@ -955,6 +1041,10 @@
         if (knife) knife.style.display = 'none';
         if (cutGuide) cutGuide.style.opacity = '0';
         if (cakeHint) cakeHint.style.display = 'none';
+
+        sendTelegramAnalytics('🎂 Cake Cut', {
+          'Action': 'Cake Sliced Successfully'
+        });
 
         // Instant center confetti pop
         triggerCenterConfetti();
